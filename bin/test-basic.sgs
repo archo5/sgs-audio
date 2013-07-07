@@ -1,0 +1,27 @@
+
+function pseudosleep( t )
+{
+	start = ftime();
+	while( ftime() - start < t );
+}
+
+include "sgs-audio.dll";
+
+sys = sgs_audio_create();
+
+sys.set_volume( 0.5 );
+sys.set_volume( 0.5, 13 );
+
+em = sys.create_emitter();
+em.load( "test.ogg" );
+em.unload();
+em.load( "test.ogg" );
+// em = sys.create_emitter( "test.ogg" );
+printvar( em.playing );
+em.volume = 0.9;
+em.pitch = 0.5;
+em.play();
+em.fade_volume( 0, 5 );
+printvar( em.playing );
+
+pseudosleep( 5 );

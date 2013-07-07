@@ -260,7 +260,7 @@ IAudioData* CreateWAVAudioData( SGDataSource* src, const char* file )
 
 invalid:
 	if( error )
-		fprintf( stderr, "Error loading file \"%s\": %s", file, error );
+		fprintf( stderr, "Error loading file \"%s\": %s\n", file, error );
 	delete File;
 	return NULL;
 }
@@ -330,7 +330,7 @@ struct OGGAudioData : IAudioData
 size_t ov_read_func( void* ptr, size_t size, size_t nmemb, void* datasource )
 {
 	SGStream* S = (SGStream*) datasource;
-	return S->Read( (byte_t*) ptr, size * nmemb );
+	return S->Read( (byte_t*) ptr, size * nmemb ) / size;
 }
 int	ov_seek_func( void* datasource, ogg_int64_t offset, int whence )
 {
@@ -379,12 +379,12 @@ OGGAudioData* CreateOGGAudioData( SGDataSource* src, const char* file )
 
 invalid2:
 	if( error )
-		fprintf( stderr, "Error loading file \"%s\": %s", file, error );
+		fprintf( stderr, "Error loading file \"%s\": %s\n", file, error );
 	delete oad;
 	return NULL;
 invalid:
 	if( error )
-		fprintf( stderr, "Error loading file \"%s\": %s", file, error );
+		fprintf( stderr, "Error loading file \"%s\": %s\n", file, error );
 	delete File;
 	return NULL;
 }
@@ -663,7 +663,7 @@ SSoundSystem::~SSoundSystem()
 	Destroy();
 }
 
-int SSoundSystem::Init( SGDataSource* source, char* DeviceName, int32_t Frequency, int32_t SyncFreq )
+int SSoundSystem::Init( SGDataSource* source, const char* DeviceName, int32_t Frequency, int32_t SyncFreq )
 {
 	DataSource = source;
 	Device = alcOpenDevice( DeviceName );
@@ -695,16 +695,16 @@ SSI_Error:
 		char bfr[ 128 ];
 		if( Context )
 		{
-			snprintf( bfr, 128, "alcMakeContextCurrent failed with error %d", alcGetError( Device ) );
+			snprintf( bfr, 128, "alcMakeContextCurrent failed with error %d\n", alcGetError( Device ) );
 			alcDestroyContext( Context );
 		}
 		else if( Device )
 		{
-			snprintf( bfr, 128, "alcCreateContext failed with error %d", alcGetError( Device ) );
+			snprintf( bfr, 128, "alcCreateContext failed with error %d\n", alcGetError( Device ) );
 			alcCloseDevice( Device );
 		}
-		else if( DeviceName ) snprintf( bfr, 128, "alcOpenDevice failed - device \"%s\" could not be opened", DeviceName );
-		else snprintf( bfr, 128, "alcOpenDevice failed - default device could not be opened" );
+		else if( DeviceName ) snprintf( bfr, 128, "alcOpenDevice failed - device \"%s\" could not be opened\n", DeviceName );
+		else snprintf( bfr, 128, "alcOpenDevice failed - default device could not be opened\n" );
 	
 		gSysInfo( bfr, "Sound system error" );
 	}
@@ -855,7 +855,7 @@ int SSoundSystem::SetupEmitter( const char* sound, SSEmitter* e )
 	{
 		OGGAudioData* oad = CreateOGGAudioData( DataSource, sound );
 		if( !oad )
-			fprintf( stderr, "Failed to load .ogg file: %s", sound );
+			fprintf( stderr, "Failed to load .ogg file: %s\n", sound );
 		e->_Init( this, oad );
 
 		Streaming.push_back( e );

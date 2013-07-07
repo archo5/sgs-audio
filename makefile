@@ -40,7 +40,7 @@ endif
 
 C2FLAGS = $(CFLAGS) -DBUILDING_SGS_AUDIO
 
-_DEPS = sa_sound.h
+_DEPS = sa_sound.h cppbind.h
 DEPS = $(patsubst %,$(SRCDIR)/%,$(_DEPS))
 
 _OBJ = sa_main.o sa_sound.o
