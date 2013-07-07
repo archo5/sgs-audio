@@ -5,23 +5,32 @@ function pseudosleep( t )
 	while( ftime() - start < t );
 }
 
+println( "loading the DLL..." );
 include "sgs-audio.dll";
 
+println( "creating the audio system..." );
 sys = sgs_audio_create();
 
+println( "setting global volume to 0.5 and volume of group 13 to 0.5..." );
 sys.set_volume( 0.5 );
 sys.set_volume( 0.5, 13 );
 
+println( "creating the emitter (and reloading its contents)..." );
 em = sys.create_emitter();
 em.load( "test.ogg" );
 em.unload();
 em.load( "test.ogg" );
 // em = sys.create_emitter( "test.ogg" );
-printvar( em.playing );
+
+println( "pre-play, is playing? " $ em.playing );
+println( "volume for sound = 0.9, pitch = 0.5" );
 em.volume = 0.9;
 em.pitch = 0.5;
+
+println( "playing & fading to 0 over 5 seconds..." );
 em.play();
 em.fade_volume( 0, 5 );
-printvar( em.playing );
+println( "is playing? " $ em.playing );
 
+println( "waiting for 5 seconds..." );
 pseudosleep( 5 );
