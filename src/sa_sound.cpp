@@ -909,7 +909,7 @@ void SSoundSystem::SetVolume( float Volume, uint32_t Group )
 	VolumeData[ Group ] = Volume;
 	if( Group == 0 )
 	{
-		AL_CALL( alListeneri( AL_GAIN, Volume ) );
+		AL_CALL( alListenerf( AL_GAIN, Volume ) );
 	}
 	else
 	{
