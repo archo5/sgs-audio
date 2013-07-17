@@ -161,13 +161,13 @@ struct SGAudioEmitter
 {
 	struct SGLock
 	{
-		SGLock( sgsmutex_t mtx ) : mutex( mtx ), locked( 1 )
-		{ sgsmutex_lock( mutex ); }
-		~SGLock(){ sgsmutex_unlock( mutex ); }
-		sgsmutex_t mutex;
+		SGLock( sgsmutex_t* mtx ) : mutex( mtx ), locked( 1 )
+		{ sgsmutex_lock( *mutex ); }
+		~SGLock(){ sgsmutex_unlock( *mutex ); }
+		sgsmutex_t* mutex;
 		int locked;
 	};
-#define SGLOCK SGLock LOCK(Mutex)
+#define SGLOCK SGLock LOCK(&Mutex)
 	
 	int play( SGS_CTX )
 	{
@@ -447,13 +447,13 @@ struct SGAudioSystem
 	
 	struct SGLock
 	{
-		SGLock( sgsmutex_t mtx ) : mutex( mtx ), locked( 1 )
-		{ sgsmutex_lock( mutex ); }
-		~SGLock(){ sgsmutex_unlock( mutex ); }
-		sgsmutex_t mutex;
+		SGLock( sgsmutex_t* mtx ) : mutex( mtx ), locked( 1 )
+		{ sgsmutex_lock( *mutex ); }
+		~SGLock(){ sgsmutex_unlock( *mutex ); }
+		sgsmutex_t* mutex;
 		int locked;
 	};
-#define SGLOCK SGLock LOCK(Mutex)
+#define SGLOCK SGLock LOCK(&Mutex)
 	
 	int set_volume( SGS_CTX )
 	{
@@ -521,6 +521,7 @@ struct SGAudioSystem
 	
 	int create_emitter( SGS_CTX )
 	{
+		SGLOCK;
 		char* file;
 		SGAudioEmitter* em = new SGAudioEmitter;
 		sgs_GetStackItem( C, 0, &em->System );
