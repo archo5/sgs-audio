@@ -543,6 +543,7 @@ struct SGAudioSystem
 threadret_t SGA_Ticker( void* ss )
 {
 	SGAudioSystem* sys = (SGAudioSystem*) ss;
+	alcMakeContextCurrent( sys->Sound.Context );
 	while( sys->ThreadEnable )
 	{
 		sgsmutex_lock( sys->Mutex );

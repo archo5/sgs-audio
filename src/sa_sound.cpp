@@ -74,9 +74,9 @@ struct allog
 	void print( const char* str, ... )
 	{
 		va_list args;
-		_crt_va_start( args, str );
+		va_start( args, str );
 		vfprintf( f, str, args );
-		_crt_va_end( args );
+		va_end( args );
 		fflush( f );
 	}
 } allogi;
@@ -105,7 +105,7 @@ void CheckALErrors( const char* call, const char* file, int32_t line, ALCdevice*
 		char buf[ 4096 ];
 		TString out;
 		const char* errstr = dev ? ALCErrors[ error - ALC_INVALID_DEVICE ] : ALErrors[ error - AL_INVALID_NAME ];
-		snprintf( buf, 4096, "OpenGL error - %s\nCall: %s\nFile: %s\nLine: %d", errstr, call, file, line );
+		snprintf( buf, 4096, "OpenAL error - %s\nCall: %s\nFile: %s\nLine: %d", errstr, call, file, line );
 		out = buf;
 		if( data )
 		{
@@ -124,7 +124,7 @@ void CheckALErrors( const char* call, const char* file, int32_t line, ALCdevice*
 }
 
 
-#if 0//#ifdef _DEBUG
+#ifdef _DEBUG
 #define AL_CALL( c, ... ) c; CheckALErrors( #c, __FILE__, __LINE__, NULL, NULL, __VA_ARGS__ )
 #define ALC_CALL( c, device, ... ) c; CheckALErrors( #c, __FILE__, __LINE__, device, NULL, __VA_ARGS__ );
 #else
@@ -429,44 +429,44 @@ void SSEmitter::Play()
 	{
 		StreamPreserve = TRUE;
 		ALint state = 0;
-		AL_CALL( alGetSourcei( Source, AL_SOURCE_STATE, &state ) );
+		AL_CALL( alGetSourcei( Source, AL_SOURCE_STATE, &state ), 0 );
 		if( state != AL_PAUSED )
 		{
 			alSourceStop( Source );
 			StreamSource->Seek( 0 );
 		}
 		Update();
-		AL_CALL( alSourcePlay( Source ) );
+		AL_CALL( alSourcePlay( Source ), 0 );
 	}
 	else
 	{
-		AL_CALL( alSourcePlay( Source ) );
+		AL_CALL( alSourcePlay( Source ), 0 );
 	}
 }
 
 void SSEmitter::Stop()
 {
 	StreamPreserve = FALSE;
-	AL_CALL( alSourceStop( Source ) );
+	AL_CALL( alSourceStop( Source ), 0 );
 }
 
 void SSEmitter::Pause()
 {
 	StreamPreserve = FALSE;
-	AL_CALL( alSourcePause( Source ) );
+	AL_CALL( alSourcePause( Source ), 0 );
 }
 
 int SSEmitter::IsPlaying()
 {
 	ALint v = 0;
-	AL_CALL( alGetSourcei( Source, AL_SOURCE_STATE, &v ) );
+	AL_CALL( alGetSourcei( Source, AL_SOURCE_STATE, &v ), 0 );
 	return v == AL_PLAYING;
 }
 
 void SSEmitter::SetLooping( int on )
 {
 	StreamLoop = on;
-	AL_CALL( alSourcei( Source, AL_LOOPING, StreamSource ? FALSE : on ) );
+	AL_CALL( alSourcei( Source, AL_LOOPING, StreamSource ? FALSE : on ), 0 );
 }
 
 void SSEmitter::SetPlayOffset( float secs )
@@ -481,14 +481,14 @@ void SSEmitter::SetPlayOffset( float secs )
 	}
 	else
 	{
-		AL_CALL( alSourcef( Source, AL_SEC_OFFSET, secs ) );
+		AL_CALL( alSourcef( Source, AL_SEC_OFFSET, secs ), 0 );
 	}
 }
 
 float SSEmitter::GetPlayOffset()
 {
 	float time;
-	AL_CALL( alGetSourcef( Source, AL_SEC_OFFSET, &time ) );
+	AL_CALL( alGetSourcef( Source, AL_SEC_OFFSET, &time ), 0 );
 	if( StreamSource )
 		time += StreamSource->Pos2Time( LastStreamPos );
 	return time;
@@ -496,22 +496,22 @@ float SSEmitter::GetPlayOffset()
 
 void SSEmitter::Set3DMode( int on )
 {
-	AL_CALL( alSourcef( Source, AL_REFERENCE_DISTANCE, on ? 1.0f : 0.0f ) );
-	AL_CALL( alSourcei( Source, AL_SOURCE_RELATIVE, !on ) );
+	AL_CALL( alSourcef( Source, AL_REFERENCE_DISTANCE, on ? 1.0f : 0.0f ), 0 );
+	AL_CALL( alSourcei( Source, AL_SOURCE_RELATIVE, !on ), 0 );
 	if( !on )
 	{
-		AL_CALL( alSource3f( Source, AL_POSITION, 0.0f, 0.0f, 0.0f ) );
+		AL_CALL( alSource3f( Source, AL_POSITION, 0.0f, 0.0f, 0.0f ), 0 );
 	}
 }
 
 void SSEmitter::SetDistanceFactor( float f )
 {
-	AL_CALL( alSourcef( Source, AL_REFERENCE_DISTANCE, f ) );
+	AL_CALL( alSourcef( Source, AL_REFERENCE_DISTANCE, f ), 0 );
 }
 
 void SSEmitter::SetPosition( float pos[3] )
 {
-	AL_CALL( alSourcefv( Source, AL_POSITION, pos ) );
+	AL_CALL( alSourcefv( Source, AL_POSITION, pos ), 0 );
 }
 
 void SSEmitter::SetPanning( float pan )
@@ -571,8 +571,8 @@ int SSEmitter::Update()
 {
 	ALint proc = 0, que = 0;
 	int active = FALSE;
-	AL_CALL( alGetSourcei( Source, AL_BUFFERS_PROCESSED, &proc ) );
-	AL_CALL( alGetSourcei( Source, AL_BUFFERS_QUEUED, &que ) );
+	AL_CALL( alGetSourcei( Source, AL_BUFFERS_PROCESSED, &proc ), 0 );
+	AL_CALL( alGetSourcei( Source, AL_BUFFERS_QUEUED, &que ), 0 );
 
 	LastStreamPos = StreamSource->Tell();
 
@@ -580,16 +580,16 @@ int SSEmitter::Update()
 	{
 		int32_t read = Stream( Buffers[ 0 ] );
 		active |= read;
-		if( read ){ AL_CALL( alSourceQueueBuffers( Source, 1, Buffers ) ); }
+		if( read ){ AL_CALL( alSourceQueueBuffers( Source, 1, Buffers ), 0 ); }
 		read = Stream( Buffers[ 1 ] );
 		active |= read;
-		if( read ){ AL_CALL( alSourceQueueBuffers( Source, 1, Buffers + 1 ) ); }
+		if( read ){ AL_CALL( alSourceQueueBuffers( Source, 1, Buffers + 1 ), 0 ); }
 	}
 
 	while( proc-- )
 	{
 		ALuint buf = 0;
-		AL_CALL( alSourceUnqueueBuffers( Source, 1, &buf ) );
+		AL_CALL( alSourceUnqueueBuffers( Source, 1, &buf ), 0 );
 		if( !buf )
 			break;
 
@@ -598,17 +598,17 @@ int SSEmitter::Update()
 
 		if( read )
 		{
-			AL_CALL( alSourceQueueBuffers( Source, 1, &buf ) );
+			AL_CALL( alSourceQueueBuffers( Source, 1, &buf ), 0 );
 		}
 	}
 	
 	if( StreamPreserve && active )
 	{
 		ALint v = 0;
-		AL_CALL( alGetSourcei( Source, AL_SOURCE_STATE, &v ) );
+		AL_CALL( alGetSourcei( Source, AL_SOURCE_STATE, &v ), 0 );
 		if( v != AL_PLAYING )
 		{
-			AL_CALL( alSourcePlay( Source ) );
+			AL_CALL( alSourcePlay( Source ), 0 );
 		}
 	}
 
@@ -624,7 +624,7 @@ int32_t SSEmitter::Stream( ALuint buf )
 		return FALSE;
 
 	ALuint format = StreamSource->Channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
-	AL_CALL( alBufferData( buf, format, data, size, StreamSource->SampleRate ) );
+	AL_CALL( alBufferData( buf, format, data, size, StreamSource->SampleRate ), 0 );
 	return TRUE;
 }
 
@@ -678,7 +678,7 @@ int SSoundSystem::Init( SGDataSource* source, const char* DeviceName, int32_t Fr
 	if( !alcMakeContextCurrent( Context ) )
 		goto SSI_Error;
 
-	ALC_CALL( alcProcessContext( Context ), Device );
+	ALC_CALL( alcProcessContext( Context ), Device, 0 );
 
 	Working = TRUE;
 	for( uint32_t i = 0; i < 33; ++i )
@@ -775,10 +775,10 @@ ALuint SS_CreateBufferFromFile( SGDataSource* src, const char* file )
 	}
 	
 	ALuint buffer;
-	AL_CALL( alGenBuffers( 1, &buffer ) );
+	AL_CALL( alGenBuffers( 1, &buffer ), 0 );
 	ALenum format = ( data->BitsPerSample == 8 ) ? ( data->Channels == 1 ? AL_FORMAT_MONO8 : AL_FORMAT_STEREO8 ) : 
 		( data->Channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16 );
-	AL_CALL( alBufferData( buffer, format, wavedata, data->PCMSize, data->SampleRate ) );
+	AL_CALL( alBufferData( buffer, format, wavedata, data->PCMSize, data->SampleRate ), 0 );
 	ALenum err = alGetError();
 	if( err != AL_NO_ERROR )
 		fprintf( stderr, "WAV load error: AL error in alBufferData (programmer error)\n" );
@@ -820,7 +820,7 @@ void ReleaseBuffer( BufNameMap& names, BufIDMap& ids, ALuint buf )
 		SSBuffer* b = n->second;
 		names.erase( b->Name );
 		ids.erase( b->Buffer );
-		AL_CALL( alDeleteBuffers( 1, &b->Buffer ) );
+		AL_CALL( alDeleteBuffers( 1, &b->Buffer ), 0 );
 		delete b;
 	}
 	else fprintf( stderr, "An AL buffer with id %d is not found\n", buf );
@@ -849,7 +849,7 @@ int SSoundSystem::SetupEmitter( const char* sound, SSEmitter* e )
 		e->_Init( this, NULL );
 
 		ALuint buf = GetBuffer( DataSource, Names, IDs, e->Name );
-		AL_CALL( alSourcei( e->Source, AL_BUFFER, buf ) );
+		AL_CALL( alSourcei( e->Source, AL_BUFFER, buf ), 0 );
 	}
 	else if( !strcmp( ext.c_str(), "ogg" ) )
 	{
@@ -909,7 +909,7 @@ void SSoundSystem::SetVolume( float Volume, uint32_t Group )
 	VolumeData[ Group ] = Volume;
 	if( Group == 0 )
 	{
-		AL_CALL( alListenerf( AL_GAIN, Volume ) );
+		AL_CALL( alListenerf( AL_GAIN, Volume ), 0 );
 	}
 	else
 	{
@@ -931,9 +931,9 @@ void SSoundSystem::SetPitch( float Pitch, uint32_t Group )
 {
 	BREAK_IF( Group >= 33 );
 	PitchData[ Group ] = Pitch;
-/*	if( Group == 0 )
+	if( Group == 0 )
 		alListenerf( AL_PITCH, Pitch );
-	else */
+	else
 	{
 		uint32_t Flag = 0x00000001 << ( Group - 1 );
 		for( uint32_t i = 0; i < Emitters.size(); ++i )
@@ -951,7 +951,7 @@ float SSoundSystem::GetPitch( uint32_t Group )
 
 void SSoundSystem::SetListenerPosition( float pos[3] )
 {
-	AL_CALL( alListenerfv( AL_POSITION, pos ) );
+	AL_CALL( alListenerfv( AL_POSITION, pos ), 0 );
 }
 
 void SSoundSystem::SetListenerDirection( float dir[3], float up[3] )
@@ -959,7 +959,7 @@ void SSoundSystem::SetListenerDirection( float dir[3], float up[3] )
 	float f[ 6 ];
 	memcpy( f, dir, sizeof( float ) * 3 );
 	memcpy( &f[ 3 ], up, sizeof( float ) * 3 );
-	AL_CALL( alListenerfv( AL_ORIENTATION, f ) );
+	AL_CALL( alListenerfv( AL_ORIENTATION, f ), 0 );
 }
 
 void SSoundSystem::ChangeState( int Suspended )
@@ -967,11 +967,11 @@ void SSoundSystem::ChangeState( int Suspended )
 	Working = !Suspended;
 	if( Suspended )
 	{
-		ALC_CALL( alcSuspendContext( Context ), Device );
+		ALC_CALL( alcSuspendContext( Context ), Device, 0 );
 	}
 	else
 	{
-		ALC_CALL( alcProcessContext( Context ), Device );
+		ALC_CALL( alcProcessContext( Context ), Device, 0 );
 	}
 }
 
@@ -984,7 +984,7 @@ void SSoundSystem::UpdateVolume( SSEmitter* e )
 		if( flag & e->Type )
 			vol *= VolumeData[ i + 1 ];
 	}
-	AL_CALL( alSourcef( e->Source, AL_GAIN, vol ) );
+	AL_CALL( alSourcef( e->Source, AL_GAIN, vol ), 0 );
 }
 
 void SSoundSystem::UpdatePitch( SSEmitter* e )
@@ -997,6 +997,6 @@ void SSoundSystem::UpdatePitch( SSEmitter* e )
 			pitch *= PitchData[ i + 1 ];
 	}
 	pitch *= PitchData[ 0 ]; // <<
-	AL_CALL( alSourcef( e->Source, AL_PITCH, pitch ) );
+	AL_CALL( alSourcef( e->Source, AL_PITCH, pitch ), 0 );
 }
 
