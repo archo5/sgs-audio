@@ -169,7 +169,7 @@ struct SGAudioEmitter
 		sgsmutex_t* mutex;
 		int locked;
 	};
-#define SGLOCK SGLock LOCK(&Mutex)
+#define SGLOCK SGLock LOCK(Mutex)
 	
 	int play( SGS_CTX )
 	{
@@ -364,7 +364,7 @@ struct SGAudioEmitter
 	
 	sgs_Variable System;
 	SSEmitter Emitter;
-	sgsmutex_t Mutex;
+	sgsmutex_t* Mutex;
 };
 
 int SGAudioEmitter_gcmark( SGS_CTX, sgs_VarObj* data, int dco )
@@ -431,20 +431,33 @@ threadret_t SGA_Ticker( void* );
 
 struct SGAudioSystem
 {
-	SGAudioSystem() : ThreadEnable( TRUE )
+	static SGAudioSystem* create()
 	{
-		Source = new SGFileSource;
-		Sound.Init( Source );
-		sgsthread_create( Thread, SGA_Ticker, this );
-		sgsmutex_init( Mutex );
+		SGAudioSystem* sys = new SGAudioSystem;
+		sys->ThreadEnable = TRUE;
+		sys->Source = new SGFileSource;
+		if( !sys->Sound.Init( sys->Source ) )
+		{
+			delete sys->Source;
+			sys->Source = NULL;
+			delete sys;
+			return NULL;
+		}
+		sgsthread_create( sys->Thread, SGA_Ticker, sys );
+		sgsmutex_init( sys->MutexObj );
+		sys->Mutex = &sys->MutexObj;
+		return sys;
 	}
 	~SGAudioSystem()
 	{
-		ThreadEnable = FALSE;
-		sgsthread_join( Thread );
-		sgsmutex_destroy( Mutex );
-		Sound.Destroy();
-		delete Source;
+		if( Source )
+		{
+			ThreadEnable = FALSE;
+			sgsthread_join( Thread );
+			sgsmutex_destroy( MutexObj );
+			Sound.Destroy();
+			delete Source;
+		}
 	}
 	
 	struct SGLock
@@ -455,7 +468,6 @@ struct SGAudioSystem
 		sgsmutex_t* mutex;
 		int locked;
 	};
-#define SGLOCK SGLock LOCK(&Mutex)
 	
 	int set_volume( SGS_CTX )
 	{
@@ -538,7 +550,8 @@ struct SGAudioSystem
 	SGDataSource* Source;
 	SSoundSystem Sound;
 	sgsthread_t Thread;
-	sgsmutex_t Mutex;
+	sgsmutex_t* Mutex;
+	sgsmutex_t MutexObj;
 	int ThreadEnable;
 };
 
@@ -548,9 +561,9 @@ threadret_t SGA_Ticker( void* ss )
 	alcMakeContextCurrent( sys->Sound.Context );
 	while( sys->ThreadEnable )
 	{
-		sgsmutex_lock( sys->Mutex );
+		sgsmutex_lock( sys->MutexObj );
 		sys->Sound.Tick( 1.0f / 30.0f );
-		sgsmutex_unlock( sys->Mutex );
+		sgsmutex_unlock( sys->MutexObj );
 		sgsthread_sleep( 33 );
 	}
 	return 0;
@@ -585,7 +598,20 @@ SGS_DEFINE_IFACE_END;
 
 int sgs_audio_create( SGS_CTX )
 {
-	sgs_PushObject( C, new SGAudioSystem, SGS_IFN(SGAudioSystem) );
+	SGAudioSystem* sys = SGAudioSystem::create();
+	if( !sys )
+		return 0;
+	sgs_PushObject( C, sys, SGS_IFN(SGAudioSystem) );
+	return 1;
+}
+
+int sgs_audio_get_devices( SGS_CTX )
+{
+	TString str;
+	int good = SSoundSystem::GetDevices( str );
+	if( !good )
+		_WARN( "Failed to retrieve OpenAL devices" );
+	sgs_PushString( C, str.c_str() );
 	return 1;
 }
 
@@ -594,6 +620,8 @@ extern "C" int sgscript_main( SGS_CTX )
 {
 	sgs_PushCFunction( C, sgs_audio_create );
 	sgs_StoreGlobal( C, "sgs_audio_create" );
+	sgs_PushCFunction( C, sgs_audio_get_devices );
+	sgs_StoreGlobal( C, "sgs_audio_get_devices" );
 	return SGS_SUCCESS;
 }
 

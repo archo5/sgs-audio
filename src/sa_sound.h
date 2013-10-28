@@ -162,7 +162,7 @@ struct SSoundSystem
 	SSoundSystem();
 	~SSoundSystem();
 
-	int Init( SGDataSource* source, const char* DeviceName = "Generic Software", int32_t Frequency = 44100, int32_t SyncFreq = 30 );
+	int Init( SGDataSource* source, const char* DeviceName = NULL, int32_t Frequency = 44100, int32_t SyncFreq = 30 );
 	void Destroy();
 	void Tick( float Delta );
 

@@ -665,6 +665,12 @@ SSoundSystem::~SSoundSystem()
 
 int SSoundSystem::Init( SGDataSource* source, const char* DeviceName, int32_t Frequency, int32_t SyncFreq )
 {
+	if( DeviceName == NULL )
+#ifdef _WIN32
+		DeviceName = "Generic Software";
+#else
+		DeviceName = "OpenAL Soft";
+#endif
 	DataSource = source;
 	Device = alcOpenDevice( DeviceName );
 	ALCint attrs[ 4 ] = { ALC_FREQUENCY, Frequency, ALC_REFRESH, SyncFreq };
