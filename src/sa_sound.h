@@ -7,16 +7,21 @@
 #include <math.h>
 #include <stdarg.h>
 
+#ifdef _WIN32
 #include <al.h>
 #include <alc.h>
+#else
+#include <AL/al.h>
+#include <AL/alc.h>
+#endif
 
 #define SGS_INTERNAL
 
 extern "C" {
-#include "sgscript.h"
-#include "sgs_util.h"
+#include <sgscript.h>
+#include <sgs_util.h>
 }
-#include "cppbind.h"
+#include <cppbind.h>
 
 typedef unsigned char byte_t;
 typedef std::string TString;

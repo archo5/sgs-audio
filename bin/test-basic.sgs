@@ -6,7 +6,7 @@ function pseudosleep( t )
 }
 
 println( "loading the DLL..." );
-include "sgs-audio.dll";
+include "sgs-audio";
 
 println( "creating the audio system..." );
 sys = sgs_audio_create();

@@ -1,9 +1,6 @@
 
 
-#include <pthread.h>
 #include "sa_sound.h"
-
-#include <windows.h>
 
 
 struct SGFileStream : SGStream
@@ -59,12 +56,25 @@ struct SGFileSource : SGDataSource
 
 #define gmReal double
 #define gmString char*
-#define gmFunc extern "C" __declspec( dllexport )
+#ifdef _WIN32
+#  define gmFunc extern "C" __declspec( dllexport )
+#else
+#  define gmFunc extern "C"
+#endif
 #define gmFuncR gmFunc gmReal
 #define gmFuncS gmFunc gmString
 
 
 gmFuncR sga_Free();
+
+
+#define _WARN( x ) return sgs_Printf( C, SGS_WARNING, x )
+
+
+
+#ifdef WIN32
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
 
 //// Win32 Stuff ////
 
@@ -96,15 +106,6 @@ BOOL WINAPI DllMain(
     return TRUE;  // Successful DLL_PROCESS_ATTACH.
 }
 
-
-#define _WARN( x ) return sgs_Printf( C, SGS_WARNING, x )
-
-
-
-#ifdef WIN32
-#  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>
-
 #define sgsthread_sleep( ms ) Sleep( ms )
 
 #define sgsmutex_t CRITICAL_SECTION
@@ -125,6 +126,7 @@ BOOL WINAPI DllMain(
 #else
 
 #  include <unistd.h>
+#  include <pthread.h>
 
 static void sgsthread_sleep( int ms )
 {
@@ -418,8 +420,8 @@ SGS_END_GENERIC_SETINDEXFUNC;
 SGS_DEFINE_IFACE
 	SGS_IFACE_GETINDEX,
 	SGS_IFACE_SETINDEX,
-	SOP_GCMARK, (void*) SGAudioEmitter_gcmark,
-	SOP_DESTRUCT, (void*) SGAudioEmitter_destruct,
+	SOP_GCMARK, SGAudioEmitter_gcmark,
+	SOP_DESTRUCT, SGAudioEmitter_destruct,
 SGS_DEFINE_IFACE_END;
 #undef SGS_CLASS
 
