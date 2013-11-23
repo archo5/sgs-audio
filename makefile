@@ -33,16 +33,27 @@ EXTDIR=ext
 OUTDIR=bin
 OBJDIR=obj
 
+ifeq ($(arch),64)
+	ARCHFLAGS= -m64
+else
+	ifeq ($(arch),32)
+		ARCHFLAGS= -m32
+	else
+		ARCHFLAGS=
+	endif
+endif
+
 ifeq ($(mode),release)
-	CFLAGS = -O3 -Wall
+	CFLAGS = -O3 -Wall $(ARCHFLAGS)
 else
 	mode = debug
-	CFLAGS = -D_DEBUG -g -Wall
+	CFLAGS = -D_DEBUG -g -Wall $(ARCHFLAGS)
 endif
 
 
 
 C2FLAGS = $(CFLAGS) -DBUILDING_SGS_AUDIO
+LIBFLAGS = $(ARCHFLAGS) $(PICFLAG)
 
 _DEPS = sa_sound.h
 DEPS = $(patsubst %,$(SRCDIR)/%,$(_DEPS))
@@ -53,7 +64,7 @@ OBJ = $(patsubst %,$(OBJDIR)/%,$(_OBJ))
 
 $(OUTDIR)/sgs-audio$(LIBEXT): $(OBJ) $(LIBDIR)/libogg.a $(LIBDIR)/libvorbis.a
 	$(MAKE) -C sgscript
-	g++ -Wall -o $@ $(OBJ) -shared $(LINKPATHS) $(PLATFLAGS) -lvorbis -logg -lpthread -static-libgcc -static-libstdc++ $(PICFLAG) -Lsgscript/bin -lsgscript
+	g++ -Wall -o $@ $(OBJ) $(C2FLAGS) -shared $(LINKPATHS) $(PLATFLAGS) -lvorbis -logg -lpthread -static-libgcc -static-libstdc++ $(PICFLAG) -Lsgscript/bin -lsgscript
 	$(PLATPOST)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(DEPS)
@@ -68,9 +79,9 @@ clean:
 
 
 $(OBJDIR)/libogg_bitwise.o:
-	gcc -c -o $@ libogg-1.3.1/src/bitwise.c -O3 -Ilibogg-1.3.1/include $(PICFLAG)
+	gcc -c -o $@ libogg-1.3.1/src/bitwise.c -O3 -Ilibogg-1.3.1/include $(LIBFLAGS)
 $(OBJDIR)/libogg_framing.o:
-	gcc -c -o $@ libogg-1.3.1/src/framing.c -O3 -Ilibogg-1.3.1/include $(PICFLAG)
+	gcc -c -o $@ libogg-1.3.1/src/framing.c -O3 -Ilibogg-1.3.1/include $(LIBFLAGS)
 $(LIBDIR)/libogg.a: $(OBJDIR)/libogg_bitwise.o $(OBJDIR)/libogg_framing.o
 	ar rcs $@ $?
 
@@ -81,7 +92,7 @@ registry.o res0.o sharedbook.o smallft.o synthesis.o vorbisenc.o vorbisfile.o wi
 OBJ_VORBIS = $(patsubst %,$(OBJDIR)/%,$(_OBJ_VORBIS))
 
 $(OBJDIR)/libvorbis_%.o: libvorbis-1.3.3/lib/%.c
-	gcc -c -o $@ $< -Ilibvorbis-1.3.3/include -Ilibvorbis-1.3.3/lib -Ilibogg-1.3.1/include $(PICFLAG)
+	gcc -c -o $@ $< -Ilibvorbis-1.3.3/include -Ilibvorbis-1.3.3/lib -Ilibogg-1.3.1/include $(LIBFLAGS)
 $(LIBDIR)/libvorbis.a: $(patsubst %,$(OBJDIR)/libvorbis_%,$(_OBJ_VORBIS))
 	ar rcs $@ $?
 
