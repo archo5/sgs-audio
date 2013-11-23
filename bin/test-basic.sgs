@@ -34,3 +34,6 @@ println( "is playing? " $ em.playing );
 
 println( "waiting for 5 seconds..." );
 pseudosleep( 5 );
+
+println( "deleting system before emitter..." );
+sys = null;

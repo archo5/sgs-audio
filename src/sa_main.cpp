@@ -377,8 +377,10 @@ int SGAudioEmitter_gcmark( SGS_CTX, sgs_VarObj* data, int dco )
 int SGAudioEmitter_destruct( SGS_CTX, sgs_VarObj* data, int unused )
 {
 	SGAudioEmitter* em = (SGAudioEmitter*) data->data;
-	sgs_Release( C, &em->System );
+	// must delete system after emitter
+	sgs_Variable System = em->System;
 	delete em;
+	sgs_Release( C, &System );
 	return SGS_SUCCESS;
 }
 
