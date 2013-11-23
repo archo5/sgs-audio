@@ -878,6 +878,16 @@ void SSoundSystem::ReleaseEmitter( SSEmitter* e )
 {
 	if( e == NULL || e->System == NULL || e->System != this )
 		fprintf( stderr, "Damaged Sound Emitter found or emitter is released twice...\n" );
+	
+	for( uint32_t i = 0; i < Faders.size(); ++i )
+	{
+		SSFader& f = Faders[ i ];
+		if( f.Emitter == e )
+		{
+			Faders.erase( Faders.begin() + i );
+			i--;
+		}
+	}
 
 	if( e->StreamSource )
 	{
