@@ -673,7 +673,7 @@ int SSoundSystem::Init( SGDataSource* source, const char* DeviceName, int32_t Fr
 #endif
 	DataSource = source;
 	Device = alcOpenDevice( DeviceName );
-	ALCint attrs[ 4 ] = { ALC_FREQUENCY, Frequency, ALC_REFRESH, SyncFreq };
+	ALCint attrs[ 5 ] = { ALC_FREQUENCY, Frequency, ALC_REFRESH, SyncFreq, ALC_INVALID };
 	if( Device == NULL )
 		goto SSI_Error;
 

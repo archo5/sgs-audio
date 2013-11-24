@@ -377,10 +377,16 @@ int SGAudioEmitter_gcmark( SGS_CTX, sgs_VarObj* data, int dco )
 int SGAudioEmitter_destruct( SGS_CTX, sgs_VarObj* data, int unused )
 {
 	SGAudioEmitter* em = (SGAudioEmitter*) data->data;
-	// must delete system after emitter
 	sgs_Variable System = em->System;
-	delete em;
+	// prevent access to emitter while it's being destroyed
+	{
+		SGAudioEmitter::SGLock LOCK(em->Mutex);
+		// must release system after removing emitter from it
+		delete em;
+		// must release lock before releasing system (because system owns it)
+	}
 	sgs_Release( C, &System );
+	// done
 	return SGS_SUCCESS;
 }
 
@@ -445,9 +451,9 @@ struct SGAudioSystem
 			delete sys;
 			return NULL;
 		}
-		sgsthread_create( sys->Thread, SGA_Ticker, sys );
 		sgsmutex_init( sys->MutexObj );
 		sys->Mutex = &sys->MutexObj;
+		sgsthread_create( sys->Thread, SGA_Ticker, sys );
 		return sys;
 	}
 	~SGAudioSystem()
