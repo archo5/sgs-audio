@@ -25,7 +25,6 @@ static int16_t Stream_I16LE( SGStream* S )
 }
 static int Stream_CheckBytes( SGStream* S, const char* bytes, int count )
 {
-	BREAK_IF("TODO");
 	int i = 0;
 	while( count --> 0 )
 	{
