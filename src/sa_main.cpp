@@ -68,7 +68,7 @@ struct SGFileSource : SGDataSource
 gmFuncR sga_Free();
 
 
-#define _WARN( x ) return sgs_Printf( C, SGS_WARNING, x )
+#define _WARN( x ) return sgs_Msg( C, SGS_WARNING, "%s", x )
 
 
 
@@ -210,9 +210,8 @@ struct SGAudioEmitter
 	{
 		SGLOCK;
 		sgs_Real vol, tm;
-		if( !sgs_ParseReal( C, 1, &vol ) ||
-			!sgs_ParseReal( C, 2, &tm ) )
-			_WARN( "expected 2 arguments of type 'real' (target,time)" );
+		if( !sgs_LoadArgs( C, "rr", &vol, &tm ) )
+			return 0;
 		Emitter.FadeVolume( vol, tm );
 		return 0;
 	}
@@ -221,9 +220,8 @@ struct SGAudioEmitter
 	{
 		SGLOCK;
 		sgs_Real x, y, z;
-		if( !sgs_ParseReal( C, 1, &x ) || !sgs_ParseReal( C, 2, &y ) ||
-			!sgs_ParseReal( C, 3, &z ) )
-			_WARN( "expected 3 arguments of type 'real' (x,y,z)" );
+		if( !sgs_LoadArgs( C, "rrr", &x, &y, &z ) )
+			return 0;
 		float pos[3] = {(float)x,(float)y,(float)z};
 		Emitter.SetPosition( pos );
 		return 0;
@@ -242,11 +240,11 @@ struct SGAudioEmitter
 		sgs_PushBool( C, Emitter.StreamLoop );
 		return SGS_SUCCESS;
 	}
-	int setter_loop( SGS_CTX )
+	int setter_loop( SGS_CTX, sgs_Variable* val )
 	{
 		SGLOCK;
 		int loop;
-		if( sgs_ParseBool( C, 1, &loop ) )
+		if( sgs_ParseBoolP( C, val, &loop ) )
 		{
 			Emitter.SetLooping( loop );
 			return SGS_SUCCESS;
@@ -260,11 +258,11 @@ struct SGAudioEmitter
 		sgs_PushReal( C, Emitter.GetVolume() );
 		return SGS_SUCCESS;
 	}
-	int setter_volume( SGS_CTX )
+	int setter_volume( SGS_CTX, sgs_Variable* val )
 	{
 		SGLOCK;
 		sgs_Real vol;
-		if( sgs_ParseReal( C, 1, &vol ) )
+		if( sgs_ParseRealP( C, val, &vol ) )
 		{
 			Emitter.SetVolume( vol );
 			return SGS_SUCCESS;
@@ -278,11 +276,11 @@ struct SGAudioEmitter
 		sgs_PushReal( C, Emitter.GetPitch() );
 		return SGS_SUCCESS;
 	}
-	int setter_pitch( SGS_CTX )
+	int setter_pitch( SGS_CTX, sgs_Variable* val )
 	{
 		SGLOCK;
 		sgs_Real pitch;
-		if( sgs_ParseReal( C, 1, &pitch ) )
+		if( sgs_ParseRealP( C, val, &pitch ) )
 		{
 			Emitter.SetPitch( pitch );
 			return SGS_SUCCESS;
@@ -296,11 +294,11 @@ struct SGAudioEmitter
 		sgs_PushInt( C, Emitter.GetType() );
 		return SGS_SUCCESS;
 	}
-	int setter_groups( SGS_CTX )
+	int setter_groups( SGS_CTX, sgs_Variable* val )
 	{
 		SGLOCK;
-		sgs_Real groups;
-		if( sgs_ParseReal( C, 1, &groups ) )
+		sgs_Int groups;
+		if( sgs_ParseIntP( C, val, &groups ) )
 		{
 			Emitter.SetType( groups );
 			return SGS_SUCCESS;
@@ -314,11 +312,11 @@ struct SGAudioEmitter
 		sgs_PushReal( C, Emitter.GetPlayOffset() );
 		return SGS_SUCCESS;
 	}
-	int setter_offset( SGS_CTX )
+	int setter_offset( SGS_CTX, sgs_Variable* val )
 	{
 		SGLOCK;
 		sgs_Real off;
-		if( sgs_ParseReal( C, 1, &off ) )
+		if( sgs_ParseRealP( C, val, &off ) )
 		{
 			Emitter.SetPlayOffset( off );
 			return SGS_SUCCESS;
@@ -326,11 +324,11 @@ struct SGAudioEmitter
 		return SGS_EINVAL;
 	}
 	
-	int setter_mode3d( SGS_CTX )
+	int setter_mode3d( SGS_CTX, sgs_Variable* val )
 	{
 		SGLOCK;
 		int m3d;
-		if( sgs_ParseBool( C, 1, &m3d ) )
+		if( sgs_ParseBoolP( C, val, &m3d ) )
 		{
 			Emitter.Set3DMode( m3d );
 			return SGS_SUCCESS;
@@ -338,11 +336,11 @@ struct SGAudioEmitter
 		return SGS_EINVAL;
 	}
 	
-	int setter_panning( SGS_CTX )
+	int setter_panning( SGS_CTX, sgs_Variable* val )
 	{
 		SGLOCK;
 		sgs_Real pan;
-		if( sgs_ParseReal( C, 1, &pan ) )
+		if( sgs_ParseRealP( C, val, &pan ) )
 		{
 			Emitter.SetPanning( pan );
 			return SGS_SUCCESS;
@@ -350,11 +348,11 @@ struct SGAudioEmitter
 		return SGS_EINVAL;
 	}
 	
-	int setter_factor( SGS_CTX )
+	int setter_factor( SGS_CTX, sgs_Variable* val )
 	{
 		SGLOCK;
 		sgs_Real df;
-		if( sgs_ParseReal( C, 1, &df ) )
+		if( sgs_ParseRealP( C, val, &df ) )
 		{
 			Emitter.SetDistanceFactor( df );
 			return SGS_SUCCESS;
@@ -367,14 +365,14 @@ struct SGAudioEmitter
 	sgsmutex_t* Mutex;
 };
 
-int SGAudioEmitter_gcmark( SGS_CTX, sgs_VarObj* data, int dco )
+int SGAudioEmitter_gcmark( SGS_CTX, sgs_VarObj* data )
 {
 	SGAudioEmitter* em = (SGAudioEmitter*) data->data;
 	sgs_GCMark( C, &em->System );
 	return SGS_SUCCESS;
 }
 
-int SGAudioEmitter_destruct( SGS_CTX, sgs_VarObj* data, int unused )
+int SGAudioEmitter_destruct( SGS_CTX, sgs_VarObj* data )
 {
 	SGAudioEmitter* em = (SGAudioEmitter*) data->data;
 	sgs_Variable System = em->System;
@@ -426,10 +424,11 @@ SGS_BEGIN_GENERIC_SETINDEXFUNC
 	SGS_GIF_SETTER( factor )
 SGS_END_GENERIC_SETINDEXFUNC;
 SGS_DEFINE_IFACE
-	SGS_IFACE_GETINDEX,
-	SGS_IFACE_SETINDEX,
-	SOP_GCMARK, SGAudioEmitter_gcmark,
-	SOP_DESTRUCT, SGAudioEmitter_destruct,
+	"SGAudioEmitter",
+	SGAudioEmitter_destruct, SGAudioEmitter_gcmark,
+	SGS_IFACE_GETINDEX, SGS_IFACE_SETINDEX,
+	NULL, NULL, NULL, NULL,
+	NULL, NULL
 SGS_DEFINE_IFACE_END;
 #undef SGS_CLASS
 
@@ -482,9 +481,8 @@ struct SGAudioSystem
 		SGLOCK;
 		sgs_Integer grp = 0;
 		sgs_Real vol;
-		if( !sgs_ParseReal( C, 1, &vol ) )
-			_WARN( "expected argument 1 (volume) as real" );
-		sgs_ParseInt( C, 2, &grp );
+		if( !sgs_LoadArgs( C, "r|i", &vol, &grp ) )
+			return 0;
 		if( grp < 0 || grp > 32 )
 			_WARN( "group ID expected between 0 and 32" );
 		Sound.SetVolume( vol, grp );
@@ -495,7 +493,8 @@ struct SGAudioSystem
 	{
 		SGLOCK;
 		sgs_Integer grp = 0;
-		sgs_ParseInt( C, 1, &grp );
+		if( !sgs_LoadArgs( C, "|i", &grp ) )
+			return 0;
 		if( grp < 0 || grp > 32 )
 			_WARN( "group ID expected between 0 and 32" );
 		sgs_PushReal( C, Sound.GetVolume( grp ) );
@@ -506,9 +505,8 @@ struct SGAudioSystem
 	{
 		SGLOCK;
 		sgs_Real x, y, z;
-		if( !sgs_ParseReal( C, 1, &x ) || !sgs_ParseReal( C, 2, &y ) ||
-			!sgs_ParseReal( C, 3, &z ) )
-			_WARN( "expected 3 real arguments (x,y,z)" );
+		if( !sgs_LoadArgs( C, "rrr", &x, &y, &z ) )
+			return 0;
 		float lp[3] = {(float)x,(float)y,(float)z};
 		Sound.SetListenerPosition( lp );
 		return 0;
@@ -518,10 +516,8 @@ struct SGAudioSystem
 	{
 		SGLOCK;
 		sgs_Real dx, dy, dz, ux, uy, uz;
-		if( !sgs_ParseReal( C, 1, &dx ) || !sgs_ParseReal( C, 2, &dy ) ||
-			!sgs_ParseReal( C, 3, &dz ) || !sgs_ParseReal( C, 4, &ux ) ||
-			!sgs_ParseReal( C, 5, &uy ) || !sgs_ParseReal( C, 6, &uz ) )
-			_WARN( "expected 6 real arguments (dx,dy,dz,ux,uy,uz)" );
+		if( !sgs_LoadArgs( C, "rrrrrr", &dx, &dy, &dz, &ux, &uy, &uz ) )
+			return 0;
 		float ld[3] = {(float)dx,(float)dy,(float)dz};
 		float lu[3] = {(float)ux,(float)uy,(float)uz};
 		Sound.SetListenerDirection( ld, lu );
@@ -546,10 +542,11 @@ struct SGAudioSystem
 		SGLOCK;
 		char* file;
 		SGAudioEmitter* em = new SGAudioEmitter;
+		sgs_Method( C );
 		sgs_GetStackItem( C, 0, &em->System );
-		sgs_Acquire( C, &em->System );
+		sgs_HideThis( C );
 		em->Mutex = Mutex;
-		if( sgs_ParseString( C, 1, &file, NULL ) )
+		if( sgs_ParseString( C, 0, &file, NULL ) )
 			Sound.SetupEmitter( file, &em->Emitter );
 		sgs_PushObject( C, em, SGS_IFN(SGAudioEmitter) );
 		return 1;
@@ -598,8 +595,11 @@ SGS_BEGIN_GENERIC_GETINDEXFUNC
 SGS_END_GENERIC_GETINDEXFUNC;
 SGS_GENERIC_DESTRUCTOR;
 SGS_DEFINE_IFACE
-	SGS_IFACE_GETINDEX,
-	SGS_IFACE_DESTRUCT,
+	"SGAudioSystem",
+	SGS_IFACE_DESTRUCT, NULL,
+	SGS_IFACE_GETINDEX, NULL,
+	NULL, NULL, NULL, NULL,
+	NULL, NULL
 SGS_DEFINE_IFACE_END;
 #undef SGS_CLASS
 
@@ -638,8 +638,8 @@ int SGAudioEmitter::load( SGS_CTX )
 {
 	char* file;
 	SGLOCK;
-	if( !sgs_ParseString( C, 1, &file, NULL ) )
-		_WARN( "expected 1 string argument (file)" );
+	if( !sgs_LoadArgs( C, "s", &file ) )
+		return 0;
 	sgs_PushBool( C, GetSystem()->Sound.SetupEmitter( file, &Emitter ) );
 	return 1;
 }
